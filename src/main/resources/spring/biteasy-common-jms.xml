@@ -1,0 +1,46 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd"
+       default-lazy-init="false">
+
+    <context:component-scan base-package="com.biteasy.study.jms" />
+
+    <!-- set connection factory -->
+    <bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="${config.jms.url}" />
+    </bean>
+
+    <!-- set query or topic -->
+    <bean id="destination" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg index="0" value="corpUpdate" />
+    </bean>
+
+    <!-- set jms template -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="defaultDestination" ref="destination"/>
+        <!-- true for Topic false for Queue -->
+        <property name="pubSubDomain" value="false" />
+        <!-- message waiting time(ms) -->
+        <property name="receiveTimeout" value="30000" />
+    </bean>
+
+    <!-- and this is the message listener container -->
+    <!-- 启了两个消费者终端，分别监听各自感兴趣的队列 -->
+    <bean id="jmsContainerForPassport" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="destination"/>
+        <property name="messageListener" ref="consumerForBiteasyEvent"/>
+    </bean>
+
+</beans>
